@@ -1,0 +1,37 @@
+import requests
+from bs4 import BeautifulSoup
+import csv
+
+year = []
+model = []
+badge = []
+km = []
+adType = []
+suburb = []
+price = []
+
+for i in range(1, 6000):
+    URL = "https://www.autotrader.com.au/for-sale?page="
+    r = requests.get(URL+str(i))
+    soup = BeautifulSoup(r.content, "html.parser")
+    results = soup.find("div", class_="resultsGrid")
+    cars = results.find_all("section", class_="row")
+
+    for car in cars:
+        year.append(car.find("h3", class_="carListing--title").text.strip())
+        model.append(car.find("strong", class_="mmv").text.strip())
+        badge.append(car.find("span", class_="variant").text.strip())
+        price.append(car.find("div", class_="carListingPrice").text.strip())
+        km.append(car.find("span", class_="carListing--mileage").text.strip())
+        adType.append(car.find("div", class_="carListing--adType").text.strip())
+        suburb.append(car.find("div", class_="carListing--location").text.strip())
+
+print(len(model))
+
+with open ('used_cars.csv', 'w', newline='') as csvfile:
+    fieldnames = ['year', 'model', 'badge', 'km', 'ad_type','suburb', 'price' ]
+    thewriter = csv.DictWriter(csvfile, fieldnames = fieldnames)
+    thewriter.writeheader()
+    for i in range(len(cars)):
+        thewriter.writerow({'year' : year[i], 'model': model[i], 'badge': badge[i], 'km' : km[i], 'ad_type' : adType[i],
+         'suburb' : suburb[i], 'price' : price[i]})
