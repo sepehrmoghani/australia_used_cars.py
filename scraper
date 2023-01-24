@@ -1,37 +1,58 @@
 import requests
+import random
 from bs4 import BeautifulSoup
 import csv
 
-year = []
-model = []
-badge = []
+models = []
+price = []
+details = []
 km = []
+body = []
+drive = []
+fuel = []
 adType = []
 suburb = []
-price = []
 
-for i in range(1, 6000):
-    URL = "https://www.autotrader.com.au/for-sale?page="
-    r = requests.get(URL+str(i))
+for i in range(1, 2000):
+    item_code = random.randrange(12941406, 12951406)
+    URL = "https://www.autotrader.com.au/car/"
+    r = requests.get(URL+str(item_code))
     soup = BeautifulSoup(r.content, "html.parser")
-    results = soup.find("div", class_="resultsGrid")
-    cars = results.find_all("section", class_="row")
 
-    for car in cars:
-        year.append(car.find("h3", class_="carListing--title").text.strip())
-        model.append(car.find("strong", class_="mmv").text.strip())
-        badge.append(car.find("span", class_="variant").text.strip())
-        price.append(car.find("div", class_="carListingPrice").text.strip())
-        km.append(car.find("span", class_="carListing--mileage").text.strip())
-        adType.append(car.find("div", class_="carListing--adType").text.strip())
-        suburb.append(car.find("div", class_="carListing--location").text.strip())
+    models.append(soup.find("h1", class_="title").text.strip())
+    hasPrice = soup.find("span", class_="priceInfo--priceCursor")
+    hasPrice = soup.find("div", class_="priceInfo--price")
+    
+    if hasPrice is not None:
+        price.append(hasPrice.text.strip())
+    else:
+        price.append('')
+    
+    for detail in soup.find_all("div", class_="vehicleDetails--item"):
+        details.append(detail.text.strip())
+    
+    for i, item in enumerate(details):
+        if i % 6 == 0:
+            km.append(item)
+        elif i % 6 == 1:
+            body.append(item)
+        elif i % 6 == 2:
+            drive.append(item)
+        elif i % 6 == 3:
+            fuel.append(item)
+        elif i % 6 == 4:
+            adType.append(item)
+        elif i % 6 == 5:
+            suburb.append(item)
 
-print(len(model))
+year = [model[:4] for model in models]
+brand = [model[4:] for model in models]
+transmission = [d[:1] for d in drive]
+transmission = ["Automatic" if t == "A" else "Manual" for t in transmission]
 
-with open ('used_cars.csv', 'w', newline='') as csvfile:
-    fieldnames = ['year', 'model', 'badge', 'km', 'ad_type','suburb', 'price' ]
+with open ('used_cars2.csv', 'w', newline='') as csvfile:
+    fieldnames = ['year', 'model', 'body_type', 'km', 'transmission', 'price', 'fuel', 'ad_type','suburb' ]
     thewriter = csv.DictWriter(csvfile, fieldnames = fieldnames)
     thewriter.writeheader()
-    for i in range(len(cars)):
-        thewriter.writerow({'year' : year[i], 'model': model[i], 'badge': badge[i], 'km' : km[i], 'ad_type' : adType[i],
-         'suburb' : suburb[i], 'price' : price[i]})
+    for i in range(len(models)):
+        thewriter.writerow({'year': year[i], 'model': brand[i], 'body_type': body[i], 'km' : km[i], 'transmission': transmission[i], 'price' : price[i], 'fuel' : fuel[i], 'ad_type' : adType[i], 'suburb' : suburb[i]})
