@@ -15,7 +15,7 @@ adType = []
 suburb = []
 
 #Iterate through a range of cars - in this case 2000 but we can change it to any number we want
-for i in range(1, 2000):
+for i in range(1, 5000):
     
     #Generate a randon item code specifically to each car. 
     item_code = random.randrange(12941406, 12951406)
@@ -70,7 +70,7 @@ for i in range(1, 2000):
 year = [model[:4] for model in models]
 
 #This line adds the rest of the car's details to a new list
-brand = [model[4:] for model in models]
+brand = [model[5:] for model in models]
 
 #The extracted data from the car has the "transmission, other details" but I only want the transmission type
 transmission = [d[:1] for d in drive]
