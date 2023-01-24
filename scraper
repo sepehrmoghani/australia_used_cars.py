@@ -3,6 +3,7 @@ import random
 from bs4 import BeautifulSoup
 import csv
 
+# Initialize empty lists to store scraped data
 models = []
 price = []
 details = []
@@ -13,43 +14,72 @@ fuel = []
 adType = []
 suburb = []
 
+#Iterate through a range of cars - in this case 2000 but we can change it to any number we want
 for i in range(1, 2000):
+    
+    #Generate a randon item code specifically to each car. 
     item_code = random.randrange(12941406, 12951406)
     URL = "https://www.autotrader.com.au/car/"
+    
+    #Send a get request to the URL
     r = requests.get(URL+str(item_code))
+    
+    #Parse the HTML content
     soup = BeautifulSoup(r.content, "html.parser")
-
+    
+    #Append the car titles to the models list
     models.append(soup.find("h1", class_="title").text.strip())
+    
+    #Because of the wbsite's structure, I had to create two different finds for price
     hasPrice = soup.find("span", class_="priceInfo--priceCursor")
     hasPrice = soup.find("div", class_="priceInfo--price")
     
+    #So we have consistency, If the page doesn't include a price, we still get an empty string where the price should be
     if hasPrice is not None:
         price.append(hasPrice.text.strip())
     else:
         price.append('')
     
+    #On the website, it wasn't possible to seperate the details texts in HTML. 
+    #But it is possible to append each in a list and since there are 6 details per car, I created the for loop below 
     for detail in soup.find_all("div", class_="vehicleDetails--item"):
         details.append(detail.text.strip())
     
     for i, item in enumerate(details):
+        #We know from index[0] every 6th time, the string is the km of the car so we can extract them all and add them to a new list called km. 0,6,12,18,...
         if i % 6 == 0:
             km.append(item)
+        #Do the same with body. From index[1] every 6th time, the string in the list is the body type of the vehicle. 1,7,13,19,...
         elif i % 6 == 1:
             body.append(item)
+        #2,8,14,20,...
         elif i % 6 == 2:
             drive.append(item)
+        #3,9,15,21,...
         elif i % 6 == 3:
             fuel.append(item)
+        #4,10,16,22,...
         elif i % 6 == 4:
             adType.append(item)
+        #5,11,17,23,...
         elif i % 6 == 5:
             suburb.append(item)
 
+#I like to have the model's year in a seperate column so later with SQL it's easier to extract data.
+#The only place to find the car's year is in the car's title.Since we know the first 4 letters are the car's year, we can easilty add the years to a new list.
 year = [model[:4] for model in models]
+
+#This line adds the rest of the car's details to a new list
 brand = [model[4:] for model in models]
+
+#The extracted data from the car has the "transmission, other details" but I only want the transmission type
 transmission = [d[:1] for d in drive]
+
+#So first I seperate the first letter of each item in the string and add them to a new list,
+#then go through the new list, if the letter is A, it will be replaced with Automatic and if it's M it will be replaced with Manual.
 transmission = ["Automatic" if t == "A" else "Manual" for t in transmission]
 
+#Finally I create a .CSV file and add all of my data to it.
 with open ('used_cars2.csv', 'w', newline='') as csvfile:
     fieldnames = ['year', 'model', 'body_type', 'km', 'transmission', 'price', 'fuel', 'ad_type','suburb' ]
     thewriter = csv.DictWriter(csvfile, fieldnames = fieldnames)
